@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - Post Scheduler{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center py-8">
+    <div class="max-w-md w-full mx-4">
+        <div class="card bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 hover:shadow-2xl animate-slide-up">
+            <h1 class="text-4xl font-bold gradient-text mb-2 text-center">
+                <i class="fas fa-sign-in-alt"></i> Welcome Back
+            </h1>
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-8 font-medium">Log in to your dashboard 🎉</p>
+
+            <form method="post" class="space-y-5">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="animate-fade-in" style="animation-delay: 0.1s">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-user text-indigo-600"></i> Username
+                </label>
+                {{ form.username }}
+            </div>
+
+            <div class="animate-fade-in" style="animation-delay: 0.2s">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-lock text-purple-600"></i> Password
+                </label>
+                {{ form.password }}
+            </div>
+
+            <button type="submit" class="w-full gradient-button text-white font-bold py-3 px-4 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 mt-6 animate-fade-in" style="animation-delay: 0.3s">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+
+            <p class="text-center text-sm text-gray-600 dark:text-gray-400 mt-6 animate-fade-in" style="animation-delay: 0.4s">
+                Don't have an account? <a href="{% url 'signup' %}" class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-bold">Sign up here →</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background: white;
+        color: #111827;
+        transition: all 0.3s ease;
+    }
+
+    html.dark input,
+    html.dark select,
+    html.dark textarea {
+        background: #374151;
+        color: #ffffff;
+        border-color: #4b5563;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    html.dark input:focus,
+    html.dark select:focus,
+    html.dark textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+    }
+</style>
+{% endblock %}

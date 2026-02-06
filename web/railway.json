@@ -1,0 +1,9 @@
+{
+  "spec": "python",
+  "build": {
+    "builder": "dockerfile"
+  },
+  "deploy": {
+    "startCommand": "gunicorn post_scheduler.wsgi:application --bind 0.0.0.0:$PORT"
+  }
+}

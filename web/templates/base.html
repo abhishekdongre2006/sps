@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Post Scheduler{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        html.dark {
+            color-scheme: dark;
+        }
+
+        html.dark body {
+            @apply bg-gray-900 text-gray-100;
+        }
+
+        html.dark .card {
+            @apply bg-gray-800 border-gray-700;
+        }
+
+        html.dark input, html.dark select, html.dark textarea {
+            @apply bg-gray-700 text-white border-gray-600;
+        }
+
+        html.dark input:focus, html.dark select:focus, html.dark textarea:focus {
+            @apply border-indigo-400 ring-indigo-400;
+        }
+
+        /* Animations */
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+            }
+        }
+
+        @keyframes bounce-smooth {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+
+        .animate-slide-down {
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .animate-slide-up {
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+
+        .animate-bounce-smooth {
+            animation: bounce-smooth 2s infinite;
+        }
+
+        .group:hover .group-hover\:scale-105 {
+            transform: scale(1.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .gradient-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+
+        .gradient-button:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .card {
+            @apply bg-white border border-gray-200 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .toast {
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+            border-radius: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
+
+        .toast.fade-out {
+            animation: fadeOut 0.3s ease-in forwards;
+        }
+
+        .stat-card {
+            @apply p-6 rounded-lg shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1;
+        }
+
+        .nav-link {
+            @apply transition-all duration-300 hover:text-indigo-600 hover:scale-105;
+        }
+
+        html.dark .card {
+            @apply bg-gray-800 border-gray-700;
+        }
+
+        html.dark .stat-card {
+            @apply bg-gradient-to-br from-gray-800 to-gray-700;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(20deg) scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+    <!-- Navbar -->
+    <nav class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50 animate-slide-down">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing' %}{% endif %}" 
+                       class="text-2xl font-bold gradient-text hover:scale-110 transition-transform duration-300">
+                        <i class="fas fa-calendar-alt"></i> PostScheduler
+                    </a>
+                </div>
+                <div class="flex items-center gap-4">
+                    {% if user.is_authenticated %}
+                        <span class="text-sm text-gray-700 dark:text-gray-300 animate-fade-in">
+                            Hello, <strong class="text-indigo-600 dark:text-indigo-400">{{ user.username }}</strong>
+                        </span>
+                        <a href="{% url 'accounts' %}" 
+                           class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors nav-link">
+                            <i class="fas fa-link"></i> Accounts
+                        </a>
+                        
+                        <!-- Theme Toggle -->
+                        <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        
+                        <a href="{% url 'logout' %}" 
+                           class="text-sm bg-gradient-to-r from-red-500 to-pink-600 text-white px-3 py-2 rounded hover:from-red-600 hover:to-pink-700 transition-all duration-300 hover:shadow-lg">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    {% else %}
+                        <!-- Theme Toggle -->
+                        <button id="theme-toggle" class="theme-toggle" title="Toggle dark mode">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        
+                        <a href="{% url 'login' %}" 
+                           class="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors nav-link">
+                            Login
+                        </a>
+                        <a href="{% url 'signup' %}" 
+                           class="text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 rounded hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 hover:shadow-lg hover:scale-105">
+                            Sign Up
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages/Alerts -->
+    <div class="toast-container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 border-l-4 border-{% if message.tags %}{{ message.tags }}-500{% else %}blue-500{% endif %} hover:shadow-xl transition-shadow">
+                    <div class="flex gap-3">
+                        {% if 'success' in message.tags %}
+                            <i class="fas fa-check-circle text-green-500 flex-shrink-0 animate-bounce-smooth"></i>
+                        {% elif 'error' in message.tags %}
+                            <i class="fas fa-exclamation-circle text-red-500 flex-shrink-0"></i>
+                        {% elif 'warning' in message.tags %}
+                            <i class="fas fa-exclamation-triangle text-yellow-500 flex-shrink-0"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle text-blue-500 flex-shrink-0"></i>
+                        {% endif %}
+                        <p class="text-sm text-gray-800 dark:text-gray-200">{{ message }}</p>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 mt-16 py-8 border-t border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+                <p>&copy; 2026 Post Scheduler | Social Media Scheduling Made Simple ✨</p>
+                <p class="text-xs mt-2 opacity-75">No API keys needed for Demo • Mock Posting Service Active</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Dark Mode Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        const html = document.documentElement;
+
+        // Load theme preference
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+            updateThemeIcon();
+        }
+
+        themeToggle.addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcon();
+        });
+
+        function updateThemeIcon() {
+            if (html.classList.contains('dark')) {
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                themeToggle.title = 'Switch to light mode';
+            } else {
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                themeToggle.title = 'Switch to dark mode';
+            }
+        }
+
+        // Auto-dismiss toasts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const toasts = document.querySelectorAll('.toast');
+            toasts.forEach(toast => {
+                setTimeout(() => {
+                    toast.classList.add('fade-out');
+                    setTimeout(() => toast.remove(), 300);
+                }, 5000);
+            });
+        });
+
+        // Refresh stats every 10 seconds
+        {% if user.is_authenticated %}
+            setInterval(() => {
+                htmx.ajax('GET', '{% url "stats_update" %}', '#stats-container');
+            }, 10000);
+        {% endif %}
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

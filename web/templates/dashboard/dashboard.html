@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Post Scheduler{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8 animate-slide-down">
+        <h1 class="text-4xl font-bold gradient-text">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </h1>
+        <button hx-get="{% url 'schedule_post' %}" hx-target="#schedule-modal" onclick="document.getElementById('schedule-modal').classList.remove('hidden')" 
+                class="gradient-button text-white px-8 py-3 rounded-lg hover:shadow-2xl font-semibold inline-flex items-center gap-2 hover:scale-105">
+            <i class="fas fa-plus"></i> Schedule Post
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div id="stats-container" hx-get="{% url 'stats_update' %}" hx-trigger="load">
+        {% include "dashboard/stats.html" %}
+    </div>
+
+    <!-- Main Content -->
+    <div class="grid lg:grid-cols-3 gap-8 mt-8">
+        <!-- Upcoming Posts (Sidebar) -->
+        <div class="lg:col-span-1 animate-slide-up" style="animation-delay: 0.2s">
+            <div class="card hover:shadow-xl">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-clock text-indigo-600 dark:text-indigo-400"></i> Upcoming Posts
+                </h2>
+                
+                {% if upcoming_posts %}
+                    <div class="space-y-3">
+                        {% for post in upcoming_posts %}
+                            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 border border-blue-200 dark:border-gray-600 rounded p-4 text-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                                <div class="font-semibold text-gray-800 dark:text-white truncate">{{ post.content|truncatewords:5 }}</div>
+                                <div class="text-xs text-gray-600 dark:text-gray-300 mt-2 flex items-center gap-1">
+                                    <i class="fas fa-calendar-alt text-blue-600 dark:text-blue-400"></i> {{ post.scheduled_at|date:"M d, H:i" }}
+                                </div>
+                                <div class="text-xs text-blue-600 dark:text-blue-300 mt-2 font-semibold flex items-center gap-1">
+                                    <i class="fas fa-hourglass-half animate-bounce-smooth"></i> {{ post.time_until_scheduled }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                        <i class="fas fa-inbox text-5xl mb-2 opacity-50"></i>
+                        <p class="text-sm">No upcoming posts</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Posts Table (Main) -->
+        <div class="lg:col-span-2 animate-slide-up" style="animation-delay: 0.1s">
+            <div class="card hover:shadow-xl">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+                        <i class="fas fa-list text-purple-600 dark:text-purple-400"></i> Post History
+                    </h2>
+                    <input type="text" placeholder="🔍 Search posts..." 
+                           hx-get="{% url 'search_posts' %}" hx-trigger="keyup changed delay:300ms"
+                           hx-target="#posts-table"
+                           class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 dark:text-white hover:shadow-md transition-shadow">
+                </div>
+
+                <!-- Posts Table -->
+                <div id="posts-table" class="animate-fade-in">
+                    {% include "dashboard/posts_table.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Schedule Modal -->
+<div id="schedule-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm animate-fade-in">
+    <div class="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full mx-4 max-h-96 overflow-y-auto animate-slide-up shadow-2xl"></div>
+</div>
+
+<script>
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.getElementById('schedule-modal').classList.add('hidden');
+        }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('schedule-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

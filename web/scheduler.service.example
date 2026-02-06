@@ -1,0 +1,29 @@
+# Systemd service file for APScheduler
+# Copy this to /etc/systemd/system/post-scheduler.service
+# Then run:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable post-scheduler
+#   sudo systemctl start post-scheduler
+#   sudo systemctl status post-scheduler
+
+[Unit]
+Description=APScheduler for Post Scheduler
+After=network.target postgresql.service gunicorn.service
+Wants=postgresql.service gunicorn.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/app
+Environment="PATH=/app/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=post_scheduler.settings"
+EnvironmentFile=/app/.env
+ExecStart=/app/venv/bin/python manage.py run_scheduler
+Restart=on-failure
+RestartSec=10s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

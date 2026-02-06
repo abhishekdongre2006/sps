@@ -1,0 +1,153 @@
+<div class="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 rounded-lg p-6 animate-slide-up">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold gradient-text">
+            <i class="fas fa-calendar-plus"></i> Schedule New Post
+        </h2>
+        <button onclick="document.getElementById('schedule-modal').classList.add('hidden')" 
+                class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 text-2xl hover:scale-125 transition-transform">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <form method="post" action="{% url 'schedule_post' %}" enctype="multipart/form-data" class="space-y-5">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded flex gap-2">
+                <i class="fas fa-exclamation-circle flex-shrink-0 mt-0.5"></i>
+                <div>
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Platform Selection -->
+        <div class="animate-fade-in" style="animation-delay: 0.1s">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-share-alt text-purple-600 dark:text-purple-400"></i> Platform
+            </label>
+            {{ form.social_account }}
+            {% if form.social_account.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.social_account.errors.0 }}</p>
+            {% endif %}
+            {% if not form.social_account.queryset %}
+                <p class="text-yellow-600 dark:text-yellow-400 text-sm mt-2 flex gap-1">
+                    <i class="fas fa-exclamation-circle"></i> No connected accounts. <a href="{% url 'accounts' %}" class="underline font-semibold hover:no-underline">Connect one</a>
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Content -->
+        <div class="animate-fade-in" style="animation-delay: 0.2s">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-pen text-indigo-600 dark:text-indigo-400"></i> Content (Max 280 characters)
+            </label>
+            {{ form.content }}
+            {% if form.content.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.content.errors.0 }}</p>
+            {% endif %}
+            <div class="text-xs text-gray-500 dark:text-gray-400 mt-2 flex justify-between">
+                <span>Characters: <strong id="char-count" class="text-indigo-600 dark:text-indigo-400">0</strong>/280</span>
+                <span id="char-percent" class="text-gray-400">0%</span>
+            </div>
+            <div class="bg-gray-300 dark:bg-gray-600 rounded-full h-2 mt-2 overflow-hidden">
+                <div id="char-bar" class="bg-gradient-to-r from-indigo-600 to-purple-600 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Image Upload -->
+        <div class="animate-fade-in" style="animation-delay: 0.3s">
+            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                <i class="fas fa-image text-pink-600 dark:text-pink-400"></i> Image (Optional)
+            </label>
+            {{ form.image }}
+            {% if form.image.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ form.image.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Scheduled Date/Time -->
+        <div class="grid grid-cols-2 gap-3 animate-fade-in" style="animation-delay: 0.4s">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-calendar text-blue-600 dark:text-blue-400"></i> Date & Time
+                </label>
+                {{ form.scheduled_at }}
+                {% if form.scheduled_at.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.scheduled_at.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div>
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                    <i class="fas fa-globe text-teal-600 dark:text-teal-400"></i> Timezone
+                </label>
+                {{ form.timezone }}
+            </div>
+        </div>
+
+        <!-- Submit Buttons -->
+        <div class="flex gap-3 pt-4 animate-fade-in" style="animation-delay: 0.5s">
+            <button type="submit" class="flex-1 gradient-button text-white font-semibold py-3 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-check"></i> Schedule Post
+            </button>
+            <button type="button" onclick="document.getElementById('schedule-modal').classList.add('hidden')" 
+                    class="flex-1 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold py-3 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Character counter with progress bar
+    const contentField = document.querySelector('[name="content"]');
+    if (contentField) {
+        function updateCounter() {
+            const count = contentField.value.length;
+            const percent = (count / 280) * 100;
+            document.getElementById('char-count').textContent = count;
+            document.getElementById('char-percent').textContent = Math.round(percent) + '%';
+            document.getElementById('char-bar').style.width = Math.min(percent, 100) + '%';
+        }
+        
+        contentField.addEventListener('input', updateCounter);
+        updateCounter();
+    }
+</script>
+
+<style>
+    input, select, textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background: white;
+        color: #111827;
+        transition: all 0.3s ease;
+    }
+
+    html.dark input,
+    html.dark select,
+    html.dark textarea {
+        background: #374151;
+        color: #ffffff;
+        border-color: #4b5563;
+    }
+
+    input:focus, select:focus, textarea:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    html.dark input:focus,
+    html.dark select:focus,
+    html.dark textarea:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+    }
+</style>

@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: post_scheduler_db
+    environment:
+      POSTGRES_DB: post_scheduler
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: post_scheduler_cache
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: post_scheduler_web
+    command: sh -c "python manage.py migrate && gunicorn post_scheduler.wsgi:application --bind 0.0.0.0:8000 --workers 4"
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: "your-secret-key-change-in-production"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DATABASE_ENGINE: "django.db.backends.postgresql"
+      DATABASE_NAME: "post_scheduler"
+      DATABASE_USER: "postgres"
+      DATABASE_PASSWORD: "postgres123"
+      DATABASE_HOST: "postgres"
+      DATABASE_PORT: "5432"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  scheduler:
+    build: .
+    container_name: post_scheduler_scheduler
+    command: python manage.py run_scheduler
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: "your-secret-key-change-in-production"
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      DATABASE_ENGINE: "django.db.backends.postgresql"
+      DATABASE_NAME: "post_scheduler"
+      DATABASE_USER: "postgres"
+      DATABASE_PASSWORD: "postgres123"
+      DATABASE_HOST: "postgres"
+      DATABASE_PORT: "5432"
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

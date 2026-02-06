@@ -1,0 +1,38 @@
+# Systemd service file for Gunicorn
+# Copy this to /etc/systemd/system/gunicorn.service
+# Then run:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable gunicorn
+#   sudo systemctl start gunicorn
+#   sudo systemctl status gunicorn
+
+[Unit]
+Description=Gunicorn application server for Post Scheduler
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+User=www-data
+Group=www-data
+WorkingDirectory=/app
+Environment="PATH=/app/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=post_scheduler.settings"
+EnvironmentFile=/app/.env
+ExecStart=/app/venv/bin/gunicorn \
+    --workers 4 \
+    --worker-class sync \
+    --bind unix:/run/gunicorn.sock \
+    --timeout 120 \
+    --access-logfile /var/log/gunicorn/access.log \
+    --error-logfile /var/log/gunicorn/error.log \
+    post_scheduler.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+KillSignal=SIGTERM
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
